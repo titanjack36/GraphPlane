@@ -1,0 +1,3 @@
+Graph Plane V0.1 (2019-03-22)
+- Early development release
+- Working on improved graph visuals and settings for next update
