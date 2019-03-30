@@ -116,6 +116,11 @@ public class FunctionConstructor {
                     (divideIndex.get(0) + 1), DEBUG_spacing));
         }
 
+        //Check for leading negative sign, eg. -(x+1)
+        if (funcStr.length() >= 2 && funcStr.charAt(0) == '-') {
+            return toFunction(funcStr.substring(1), DEBUG_spacing).setCoeff(-1);
+        }
+
         //Check for exponents, eg. (x+1)^(x-1)
         ArrayList<Integer> exponentIndex = findOutsideOfBrackets(funcStr, "^");
         if (exponentIndex.size() != 0) {
@@ -132,11 +137,6 @@ public class FunctionConstructor {
                 return toFunction(funcStr.substring(1, funcStr.length()
                         - 1), DEBUG_spacing);
 
-        }
-
-        //Check for leading negative sign, eg. -(x+1)
-        if (funcStr.length() >= 2 && funcStr.charAt(0) == '-') {
-            return toFunction(funcStr.substring(1), DEBUG_spacing).setCoeff(-1);
         }
 
         //Check for constant value

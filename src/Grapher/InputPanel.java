@@ -17,6 +17,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.util.ArrayList;
 
+@SuppressWarnings({"WeakerAccess"})
 public class InputPanel extends JPanel {
 
     private double width;
@@ -24,27 +25,45 @@ public class InputPanel extends JPanel {
     private int scrollPos;
 
     private ArrayList<InputBlock> inputBlocks;
-    private ArrayList<Function> functions;
-    private ArrayList<Color> colors;
+    private ArrayList<FunctionSet> functions;
     private JButton addBtn;
+    private JButton togglePanelBtn;
+    private boolean hidden;
 
     public InputPanel(double posX, double posY, double width, double height) {
 
         inputBlocks = new ArrayList<>();
-        colors = new ArrayList<>();
         functions = new ArrayList<>();
         scrollPos = 0;
+        hidden = false;
+
         addBtn = new JButton("+");
         addBtn.setFocusPainted(false);
         addBtn.setContentAreaFilled(false);
         addBtn.setFont(addBtn.getFont().deriveFont(30f));
-        addInputBlock();
-
+        this.add(addBtn);
         addBtn.addActionListener(e -> addInputBlock());
 
+        togglePanelBtn = new JButton("<");
+        togglePanelBtn.setFocusPainted(false);
+        togglePanelBtn.setContentAreaFilled(false);
+        togglePanelBtn.setBorderPainted(false);
+        togglePanelBtn.setFont(addBtn.getFont().deriveFont(30f));
+        this.add(togglePanelBtn);
+        togglePanelBtn.addActionListener(e -> {
+            hidden = !hidden;
+            if (hidden) {
+                togglePanelBtn.setText(">");
+                setBounds(-this.width, 0, this.width, this.height);
+            } else {
+                togglePanelBtn.setText("<");
+                setBounds(0, 0, this.width, this.height);
+            }
+        });
+
+        addInputBlock();
         setBounds(posX, posY, width, height);
         this.setLayout(null);
-        this.add(addBtn);
         this.setOpaque(false);
     }
 
@@ -53,6 +72,12 @@ public class InputPanel extends JPanel {
     private void addInputBlock() {
         //The input block tracks its position within the list
         InputBlock inputBlock = new InputBlock(inputBlocks.size());
+        //No two consecutive input blocks on the list will have the same
+        //function color
+        while (inputBlocks.size() > 0 && inputBlock.getColor().equals(
+                inputBlocks.get(inputBlocks.size() - 1).getColor())) {
+            inputBlock.setNewRandomColor();
+        }
 
         JTextField textField = inputBlock.getTextField();
         //Listen for text input
@@ -68,16 +93,25 @@ public class InputPanel extends JPanel {
             }
         });
 
-
         JButton deleteBtn = inputBlock.getDeleteBtn();
         //Listen for deleting the input block
         deleteBtn.addActionListener(e -> removeInputBlock(inputBlock));
+
         inputBlocks.add(inputBlock);
         //Add place holders for the function and color of the input block
-        functions.add(null);
-        colors.add(null);
+        functions.add(new FunctionSet(inputBlock.getColor()));
         this.add(inputBlock);
         this.revalidate();
+
+        JButton colorBtn = inputBlock.getColorBtn();
+        colorBtn.addActionListener(e -> {
+            FunctionSet function = functions.get(inputBlock.getId());
+            function.toggleHidden();
+            colorBtn.setBackground(function.isHidden() ? new Color(0, 0,
+                    0, 0) : function.getColor());
+            GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
+            GraphProgram.repaintGraph();
+        });
 
         //Scrolls page down if the new element added to the list goes beyond
         //the bottom of the page
@@ -100,12 +134,10 @@ public class InputPanel extends JPanel {
             int index = inputBlock.getId();
             inputBlocks.remove(index);
             functions.remove(index);
-            colors.remove(index);
             this.remove(inputBlock);
             this.revalidate();
 
-            GraphProgram.updateFunctions(functions.toArray(new Function[0]),
-                    colors.toArray(new Color[0]));
+            GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
             //Shifts the indexes stored by the input blocks below up
             for (int i = index; i < inputBlocks.size(); i++)
                 inputBlocks.get(i).setId(i);
@@ -141,10 +173,8 @@ public class InputPanel extends JPanel {
             else
                 inputBlock.setInvalidInput(true);
         }
-        functions.set(index, function);
-        colors.set(index, inputBlock.getColor());
-        GraphProgram.updateFunctions(functions.toArray(new Function[0]),
-                colors.toArray(new Color[0]));
+        functions.get(index).setFunction(function);
+        GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
         GraphProgram.repaintGraph();
     }
 
@@ -172,6 +202,15 @@ public class InputPanel extends JPanel {
     }
 
     //Function: Set Bounds
+    //@param width              the new width
+    //       height             the new height
+    //Modifies the dimensions of the input panel while keeping its position
+    //the same
+    public void setBounds(double width, double height) {
+        setBounds(getX(), getY(), width, height);
+    }
+
+    //Function: Set Bounds
     //@param posX               the new x position
     //       posY               the new y position
     //       width              the new width
@@ -181,7 +220,7 @@ public class InputPanel extends JPanel {
     public void setBounds(double posX, double posY, double width, double
             height) {
 
-        super.setBounds((int)posX, (int)posY, (int)width, (int)height);
+        super.setBounds((int)posX, (int)posY, (int)width + 50, (int)height);
         this.width = width;
         this.height = height;
 
@@ -193,6 +232,7 @@ public class InputPanel extends JPanel {
         }
         if (scrollPos < 0) scrollPos = 0;
 
+        togglePanelBtn.setBounds((int)(width) - 15, 0, 75, 75);
         updateListPositions();
     }
 
@@ -220,14 +260,18 @@ public class InputPanel extends JPanel {
     //Renders the list of input block components and other panel graphics
     @Override
     public void paintComponent(Graphics g) {
+        Color btnTextColor = GraphProgram.getTheme().getTextColor();
+        addBtn.setForeground(btnTextColor);
+        togglePanelBtn.setForeground(btnTextColor);
         super.paintComponent(g);
 
-        g.setColor(new Color(255, 255, 255, 175));
+        g.setColor(GraphProgram.getTheme().getPanelColor());
         g.fillRect(0, 0, (int)width, (int)height);
-        g.setColor(new Color(114, 114, 114));
+        g.fillRect((int)width, 0, 50, 75);
+        g.setColor(GraphProgram.getTheme().getTextColor());
         g.setFont(new Font("Arial", Font.BOLD, 50));
         g.drawString("Graph Plane", 20, 55 - scrollPos);
         g.setFont(new Font("Arial", Font.BOLD, 25));
-        g.drawString("Early Dev Edition V0.1", 25, 90 - scrollPos);
+        g.drawString("Early Dev Edition V0.2", 25, 90 - scrollPos);
     }
 }

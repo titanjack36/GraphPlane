@@ -1,3 +1,11 @@
+Graph Plane V0.2 (2019-03-30)
+- Added dark mode theme
+- Added ability to hide functions from being displayed on the graph
+- Added optional grid lines feature
+- Added ability to hide the input expressions list
+- Improved colors
+- Fixed expression parser incorrectly interpreting functions
+
 Graph Plane V0.1 (2019-03-22)
 - Early development release
 - Working on improved graph visuals and settings for next update

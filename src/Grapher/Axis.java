@@ -6,20 +6,10 @@
 
 package Grapher;
 
-import javax.swing.*;
 import java.awt.*;
 
-public class Axis extends JPanel {
-
-    private Point origin;
-
-    public Axis(Point origin) {
-        this.origin = origin;
-    }
-
-    public void updateOrigin(Point origin) {
-        this.origin = origin;
-    }
+@SuppressWarnings({"WeakerAccess"})
+public class Axis {
 
     //Function: Round To Powers Of Two
     //@param doubleNum          the number to be rounded
@@ -40,15 +30,18 @@ public class Axis extends JPanel {
     //Function: Paint
     //@param g                  the graphics component
     //Renders the axis with respect to the origin
-    @Override
     public void paint(Graphics g) {
+
+        Point origin = GraphProgram.getOrigin();
         g.setColor(Color.BLACK);
         Graphics2D g2d = (Graphics2D)g;
-        g2d.setStroke(new BasicStroke(3));
 
-        //Is the graph enlarged or shrinked from its original state (zoom = 100)
+        Color axisColor = GraphProgram.getTheme().getAxisColor();
+
+        //Is the graph enlarged or shrunk from its original state (zoom = 100)
         boolean zoomOut = false;
         int width = GraphProgram.getWindowWidth();
+        int height = GraphProgram.getWindowHeight();
         double zoom = GraphProgram.getZoom();
         if (zoom < 100) {
             zoom = 10000 / zoom; //invert zoom
@@ -75,22 +68,32 @@ public class Axis extends JPanel {
         //The position of this starting coordinate value
         double posX = (int)(dxorigin / spacing) * spacing;
 
+        g.setColor(axisColor);
         g.setFont(new Font("Arial", Font.BOLD, 16));
         g.drawString("0", origin.x - 10, origin.y +
                 g.getFontMetrics().getHeight());
 
+        g2d.setStroke(new BasicStroke(2));
         //Cycle through each coordinate value on the x axis which needs to be
         //displayed on screen
         while (posX + origin.x < width + 250) {
             if (coordX != 0) {
+                g.setColor(axisColor);
                 g.drawString(coordX + "", (int) (posX + origin.x),
                         origin.y + g.getFontMetrics().getHeight());
             }
+            if (GraphProgram.isGridLineActive()) {
+                g2d.setColor(GraphProgram.getTheme().getGridLineColor());
+                g2d.drawLine((int) (posX + origin.x), -250, (int) (posX +
+                        origin.x), height + 250);
+                g2d.drawLine((int) (posX + origin.x + spacing / 2), -250,
+                        (int) (posX + origin.x + spacing / 2), height + 250);
+            }
+
             coordX += increment;
             posX += spacing;
         }
 
-        int height = GraphProgram.getWindowHeight();
         //Starting from 250 beyond the top of the program window
         double dyorigin = -250 - origin.y;
         double coordY = (int)(dyorigin / spacing) * increment;
@@ -98,23 +101,28 @@ public class Axis extends JPanel {
         //Displays all coordinate values on the y axis
         while (posY + origin.y < height + 250) {
             if (coordY != 0) {
+                g.setColor(axisColor);
                 g.drawString((-coordY) + "", origin.x + 10,
                         (int) (posY + origin.y));
             }
+            if (GraphProgram.isGridLineActive()) {
+                g2d.setColor(GraphProgram.getTheme().getGridLineColor());
+                g2d.drawLine(-250, (int) (posY + origin.y), width + 250,
+                        (int) (posY + origin.y));
+                g2d.drawLine(-250, (int) (posY + origin.y + spacing / 2),
+                        width + 250, (int) (posY + origin.y + spacing / 2));
+            }
+
             coordY += increment;
             posY += spacing;
         }
 
+        g2d.setStroke(new BasicStroke(3));
+        g.setColor(axisColor);
         //Draws the axis lines
-        if (origin.x > -250 && origin.x < GraphProgram.getWindowWidth()
-                + 250) {
-            g2d.drawLine(origin.x, -250, origin.x,
-                    GraphProgram.getWindowHeight() + 250);
-        }
-        if (origin.y > -250 && origin.y < GraphProgram.getWindowHeight()
-                + 250) {
-            g2d.drawLine(-2, origin.y, GraphProgram.getWindowWidth()
-                    + 250, origin.y);
-        }
+        if (origin.x > -250 && origin.x < width + 250)
+            g2d.drawLine(origin.x, -250, origin.x, height + 250);
+        if (origin.y > -250 && origin.y < height + 250)
+            g2d.drawLine(-2, origin.y, width + 250, origin.y);
     }
 }

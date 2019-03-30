@@ -11,6 +11,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
 
+@SuppressWarnings({"WeakerAccess"})
 public class InputBlock extends JPanel {
 
     private double width;
@@ -20,14 +21,19 @@ public class InputBlock extends JPanel {
     private JPanel textBlock;
     private JTextField textField;
     private JButton deleteBtn;
+    private JButton colorBtn;
     private Color color;
     private boolean invalidInput;
 
-    public InputBlock() {
-
+    public InputBlock(int id) {
+        color = getRandomColor();
         textField = new JTextField(7);
         textField.setFont(textField.getFont().deriveFont(40f));
         deleteBtn = new JButton("x");
+        deleteBtn.setFocusPainted(false);
+        deleteBtn.setContentAreaFilled(false);
+        colorBtn = new JButton();
+        colorBtn.setBackground(color);
 
         //Give the entire section the look a text field to make it look like the
         //button exists inside of the text field
@@ -38,17 +44,11 @@ public class InputBlock extends JPanel {
         textBlock.setBorder(textField.getBorder());
         textField.setBorder(null);
 
-        color = getRandomColor();
+        this.id = id;
         this.setLayout(null);
         this.add(textBlock);
-        deleteBtn.setFocusPainted(false);
-        deleteBtn.setContentAreaFilled(false);
+        this.add(colorBtn);
         this.setOpaque(false);
-    }
-
-    public InputBlock(int id) {
-        this();
-        this.id = id;
     }
 
     //Function: Get Random Color
@@ -63,7 +63,7 @@ public class InputBlock extends JPanel {
             case 2: return new Color(78, 85, 238);
             case 3: return new Color(225, 0, 11);
             case 4: return new Color(71, 204, 255);
-            default: return new Color(0, 0, 0);
+            default: return new Color(177, 5, 212);
         }
     }
 
@@ -87,6 +87,7 @@ public class InputBlock extends JPanel {
         this.height = height;
 
         double fieldWidth = width - 150, fieldHeight = height * 0.65;
+        colorBtn.setBounds(20, (int)(height / 2 - 20), 40, 40);
         textBlock.setBounds((int)(width - 20 - fieldWidth), (int)
                 ((height / 2) - (fieldHeight / 2)), (int)fieldWidth,
                 (int)fieldHeight);
@@ -98,6 +99,13 @@ public class InputBlock extends JPanel {
     //Sets the text field to be in a valid/invalid state
     public void setInvalidInput(boolean invalidInput) {
         this.invalidInput = invalidInput;
+    }
+
+    //Function: Set New Random Color
+    //Updates the function color of the input block to a new random color
+    public void setNewRandomColor() {
+        color = getRandomColor();
+        colorBtn.setBackground(color);
     }
 
     //Function: Get Text Field
@@ -118,6 +126,12 @@ public class InputBlock extends JPanel {
         return deleteBtn;
     }
 
+    //Function: Get Color Btn
+    //@return               the button representing the function's color
+    public JButton getColorBtn() {
+        return colorBtn;
+    }
+
     //Function: Get Color
     //@return               the color of the function for this input block
     public Color getColor() {
@@ -128,6 +142,10 @@ public class InputBlock extends JPanel {
     //@param g              the graphics component
     //Renders the elements in the input block
     public void paintComponent(Graphics g) {
+        textField.setBackground(GraphProgram.getTheme().getTextBoxColor());
+        textField.setForeground(GraphProgram.getTheme().getTextBoxTextColor());
+        textBlock.setBackground(textField.getBackground());
+        textBlock.setBorder(textField.getBorder());
         super.paintComponent(g);
         g.setColor(new Color(225, 45, 51, 100));
         //The input block will be highlighted red when an entered expression
@@ -135,10 +153,7 @@ public class InputBlock extends JPanel {
         if (invalidInput) {
             g.fillRect(0, 0, (int)width, (int)height);
         }
-        g.setColor(color);
-        //The color identifier for the input block
-        g.fillRect(20, (int)(height / 2 - 20), 40, 40);
-        g.setColor(new Color(0, 0, 0));
+        g.setColor(GraphProgram.getTheme().getTextColor());
         g.setFont(new Font("Arial", Font.PLAIN, 40));
         //Equation prompt
         g.drawString("y=", 75, (int)(height / 2 + g.getFontMetrics().
