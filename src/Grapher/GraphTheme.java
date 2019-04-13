@@ -7,7 +7,10 @@
 
 package Grapher;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 @SuppressWarnings({"WeakerAccess"})
 public class GraphTheme {
@@ -20,6 +23,15 @@ public class GraphTheme {
     private Color textBoxColor;
     private Color textBoxTextColor;
 
+    private ImageIcon gridDarkIcon;
+    private ImageIcon gridLightIcon;
+    private ImageIcon darkModeOnIcon;
+    private ImageIcon darkModeOffIcon;
+    private ImageIcon focusDarkIcon;
+    private ImageIcon focusLightIcon;
+    private ImageIcon settingsDarkIcon;
+    private ImageIcon settingsLightIcon;
+
     public GraphTheme(Color backgroundColor, Color axisColor, Color
             gridLineColor, Color textColor, Color panelColor, Color
             textBoxColor, Color textBoxTextColor) {
@@ -30,6 +42,28 @@ public class GraphTheme {
         this.panelColor = panelColor;
         this.textBoxColor = textBoxColor;
         this.textBoxTextColor = textBoxTextColor;
+
+        gridDarkIcon = new ImageIcon(getImage("grid_dark.png"));
+        gridLightIcon = new ImageIcon(getImage("grid_light.png"));
+        darkModeOnIcon = new ImageIcon(getImage(
+                "darkmode_on.png"));
+        darkModeOffIcon = new ImageIcon(getImage(
+                "darkmode_off.png"));
+        focusDarkIcon = new ImageIcon(getImage("focus_dark.png"));
+        focusLightIcon = new ImageIcon(getImage("focus_light.png"));
+        settingsDarkIcon = new ImageIcon(getImage(
+                "settings_dark.png"));
+        settingsLightIcon = new ImageIcon(getImage(
+                "settings_light.png"));
+    }
+
+    private Image getImage(String resourceFile) {
+        try {
+            return ImageIO.read(GraphProgram.class.getResource("/" +
+                    resourceFile));
+        } catch (Exception e) {
+            return new BufferedImage(0, 0, 0);
+        }
     }
 
     //Function: Get Background Color
@@ -72,5 +106,35 @@ public class GraphTheme {
     //@return   the color of text inside the text box
     public Color getTextBoxTextColor() {
         return textBoxTextColor;
+    }
+
+    //Function: Get Grid Icon
+    //@return   the icon picture for the toggle grid button, with the color
+    //          dependent on whether the graph is in dark theme
+    public ImageIcon getGridIcon() {
+        return GraphProgram.isDarkModeActive() ? gridLightIcon : gridDarkIcon;
+    }
+
+    //Function: Get Dark Mode
+    //@return   the icon picture for the toggle dark mode button, with the color
+    //          dependent on whether the graph is in dark theme
+    public ImageIcon getDarkModeIcon() {
+        return GraphProgram.isDarkModeActive() ? darkModeOnIcon :
+                darkModeOffIcon;
+    }
+
+    //Function: Get Focus Icon
+    //@return   the icon picture for the focus button, with the color
+    //          dependent on whether the graph is in dark theme
+    public ImageIcon getFocusIcon() {
+        return GraphProgram.isDarkModeActive() ? focusLightIcon : focusDarkIcon;
+    }
+
+    //Function: Get Settings Icon
+    //@return   the icon picture for the settings button, with the color
+    //          dependent on whether the graph is in dark theme
+    public ImageIcon getSettingsIcon() {
+        return GraphProgram.isDarkModeActive() ? settingsLightIcon :
+                settingsDarkIcon;
     }
 }

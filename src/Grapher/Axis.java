@@ -6,25 +6,23 @@
 
 package Grapher;
 
+import NumberFormats.Numbers;
+
 import java.awt.*;
 
 @SuppressWarnings({"WeakerAccess"})
 public class Axis {
 
-    //Function: Round To Powers Of Two
-    //@param doubleNum          the number to be rounded
-    //@return                   the nearest next power of two to the number
-    //Algorithm referenced from
-    //https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
-    private static int roundToPowersOf2(double doubleNum) {
-        int num = (int)Math.round(doubleNum);
-        num--;
-        num |= num >> 1;
-        num |= num >> 2;
-        num |= num >> 4;
-        num |= num >> 8;
-        num |= num >> 16;
-        return num + 1;
+    private int prevIndex;
+    private double prevRenderedZoom;
+    private double increment;
+    private double spacing;
+
+    public Axis() {
+        prevIndex = 0;
+        prevRenderedZoom = 0;
+        increment = 0;
+        spacing = 0;
     }
 
     //Function: Paint
@@ -35,29 +33,44 @@ public class Axis {
         Point origin = GraphProgram.getOrigin();
         g.setColor(Color.BLACK);
         Graphics2D g2d = (Graphics2D)g;
-
         Color axisColor = GraphProgram.getTheme().getAxisColor();
 
-        //Is the graph enlarged or shrunk from its original state (zoom = 100)
-        boolean zoomOut = false;
         int width = GraphProgram.getWindowWidth();
         int height = GraphProgram.getWindowHeight();
         double zoom = GraphProgram.getZoom();
-        if (zoom < 100) {
-            zoom = 10000 / zoom; //invert zoom
-            zoomOut = true;
+        //Only update increment and spacing if it is the first render or if
+        //the zoom has changed
+        if (prevRenderedZoom == 0 || zoom != prevRenderedZoom) {
+            prevRenderedZoom = zoom;
+            int index = prevIndex;
+            boolean spacingMatched = false;
+            //Depending on whether the user zoomed in or out, will increase or
+            //decrease the increment until the spacing is not too big or not
+            //too small
+            while (!spacingMatched && index < 30 && index > -30) {
+                //The difference between each consecutive value on the axis
+                //line, determined by amount of zoom
+                increment = (Math.pow((((index % 3) + 3) % 3), 2) + 1) *
+                        Math.pow(10, Math.floor(index / 3.0));
+                //The distance/number of pixels between each consecutive axis
+                //value, calculated by converting the increment amount from
+                //coordinate system to pixel system by using the zoom ratio
+                //(pixels per value in the coordinate system)
+                spacing = zoom * increment;
+                spacingMatched = spacing >= 100 && spacing < 200;
+                if (!spacingMatched)
+                    index = (GraphProgram.getPrevZoom() > zoom ? index + 1 :
+                            index - 1);
+            }
+            if (spacingMatched) {
+                prevIndex = index;
+            } else {
+                index = prevIndex;
+                increment = (Math.pow((index % 3.0), 2) + 1) * Math.pow(10,
+                        Math.floor(index / 3.0));
+                spacing = zoom * increment;
+            }
         }
-        //The difference between each consecutive value on the axis line,
-        //determined by amount of zoom
-        //Increment will always go by powers of two in order to keep a
-        //consistent scheme
-        double increment = zoomOut ? roundToPowersOf2(zoom / 100) :
-                1.0 / roundToPowersOf2(zoom / 100);
-        //The distance/number of pixels between each consecutive axis value,
-        //calculated by converting the increment amount from coordinate system
-        //to pixel system by using the zoom ratio (pixels per value in the
-        //coordinate system)
-        double spacing = GraphProgram.getZoom() * increment;
         //The distance of the starting position (250 beyond the left border)
         //from the position of the origin
         double dxorigin = -250 - origin.x;
@@ -73,23 +86,26 @@ public class Axis {
         g.drawString("0", origin.x - 10, origin.y +
                 g.getFontMetrics().getHeight());
 
-        g2d.setStroke(new BasicStroke(2));
         //Cycle through each coordinate value on the x axis which needs to be
         //displayed on screen
         while (posX + origin.x < width + 250) {
-            if (coordX != 0) {
+            if (Math.abs(coordX) > 1e-10) {
                 g.setColor(axisColor);
-                g.drawString(coordX + "", (int) (posX + origin.x),
+                g.drawString(Numbers.trimDigits(coordX, 3), (int) (posX + origin.x),
                         origin.y + g.getFontMetrics().getHeight());
             }
             if (GraphProgram.isGridLineActive()) {
                 g2d.setColor(GraphProgram.getTheme().getGridLineColor());
+                g2d.setStroke(new BasicStroke(2));
                 g2d.drawLine((int) (posX + origin.x), -250, (int) (posX +
                         origin.x), height + 250);
-                g2d.drawLine((int) (posX + origin.x + spacing / 2), -250,
-                        (int) (posX + origin.x + spacing / 2), height + 250);
+                g2d.setStroke(new BasicStroke(1));
+                for (int i = 1; i < 4; i++) {
+                    g2d.drawLine((int)(posX + origin.x + spacing * i / 4.0),
+                            -250, (int)(posX + origin.x + spacing * i / 4.0),
+                            height + 250);
+                }
             }
-
             coordX += increment;
             posX += spacing;
         }
@@ -100,17 +116,22 @@ public class Axis {
         double posY = (int)(dyorigin / spacing) * spacing;
         //Displays all coordinate values on the y axis
         while (posY + origin.y < height + 250) {
-            if (coordY != 0) {
+            if (Math.abs(coordY) > 1e-10) {
                 g.setColor(axisColor);
-                g.drawString((-coordY) + "", origin.x + 10,
+                g.drawString(Numbers.trimDigits(-coordY, 3), origin.x + 10,
                         (int) (posY + origin.y));
             }
             if (GraphProgram.isGridLineActive()) {
                 g2d.setColor(GraphProgram.getTheme().getGridLineColor());
-                g2d.drawLine(-250, (int) (posY + origin.y), width + 250,
-                        (int) (posY + origin.y));
-                g2d.drawLine(-250, (int) (posY + origin.y + spacing / 2),
-                        width + 250, (int) (posY + origin.y + spacing / 2));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawLine(-250, (int) (posY + origin.y),
+                        width + 250, (int) (posY + origin.y));
+                g2d.setStroke(new BasicStroke(1));
+                for (int i = 1; i < 4; i++) {
+                    g2d.drawLine(-250, (int)(posY + origin.y + spacing *
+                            i / 4.0), width + 250, (int)(posY + origin.y
+                            + spacing * i / 4.0));
+                }
             }
 
             coordY += increment;

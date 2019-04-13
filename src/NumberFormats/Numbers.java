@@ -7,6 +7,8 @@
 
 package NumberFormats;
 
+import java.text.DecimalFormat;
+
 public class Numbers {
 
     //Function: Format Num
@@ -21,6 +23,29 @@ public class Numbers {
         else {
             Fraction fracValue = new Fraction(num, 100);
             return fracValue.toString(); //return fraction string
+        }
+    }
+
+    //Function: Trim Digits
+    //@param num                the number to be trimmed
+    //       numOfDigits        how many decimal places to be trimmed to
+    //@return                   the trimmed number
+    //Removes digits from the number which are larger than the specified number
+    //of digits
+    @SuppressWarnings("SameParameterValue")
+    public static String trimDigits(double num, int numOfDigits) {
+
+        if (numOfDigits == 0) {
+            return (int)(num + 0.5) + "";
+        } else {
+            String format = "#.";
+            for (int i = 0; i < numOfDigits; i++) format = format.concat("#");
+            int exponential = num == 0 ? 0 : (int)Math.log10(abs(num));
+            if (abs(exponential) >= numOfDigits) num /= Math.pow(10,
+                    exponential);
+            DecimalFormat df = new DecimalFormat(format);
+            return df.format(num) + (abs(exponential) >= numOfDigits ?
+                    "e" + exponential : "");
         }
     }
 

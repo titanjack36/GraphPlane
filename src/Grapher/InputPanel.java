@@ -20,9 +20,11 @@ import java.util.ArrayList;
 @SuppressWarnings({"WeakerAccess"})
 public class InputPanel extends JPanel {
 
+    private double posX;
     private double width;
     private double height;
     private int scrollPos;
+    private int elapsedTime;
 
     private ArrayList<InputBlock> inputBlocks;
     private ArrayList<FunctionSet> functions;
@@ -50,21 +52,39 @@ public class InputPanel extends JPanel {
         togglePanelBtn.setBorderPainted(false);
         togglePanelBtn.setFont(addBtn.getFont().deriveFont(30f));
         this.add(togglePanelBtn);
-        togglePanelBtn.addActionListener(e -> {
-            hidden = !hidden;
-            if (hidden) {
-                togglePanelBtn.setText(">");
-                setBounds(-this.width, 0, this.width, this.height);
-            } else {
-                togglePanelBtn.setText("<");
-                setBounds(0, 0, this.width, this.height);
-            }
-        });
+        togglePanelBtn.addActionListener(e -> togglePanel());
 
         addInputBlock();
         setBounds(posX, posY, width, height);
         this.setLayout(null);
         this.setOpaque(false);
+    }
+
+    //Function: Toggle Panel
+    //Animates the movement of the panel when it is being retracted from it's
+    //visible state or being extended from it's hidden state
+    private void togglePanel() {
+        elapsedTime = 0;
+        hidden = !hidden;
+        Timer panelCloseTimer = new Timer(1, null);
+        panelCloseTimer.addActionListener(e -> {
+            if (hidden) {
+                setBounds((elapsedTime - 21.2) * (elapsedTime - 21.2)
+                        - this.width - 1, 0, this.width, this.height);
+            } else {
+                setBounds(-(elapsedTime - 21.2) * (elapsedTime - 21.2) + 1,
+                        0, this.width, this.height);
+            }
+
+            elapsedTime++;
+            if (posX <= -this.width || posX >= 0) {
+                setBounds(posX >= 0 ? 0 : -this.width, 0, this.width,
+                        this.height);
+                panelCloseTimer.stop();
+                togglePanelBtn.setText(hidden ? ">" : "<");
+            }
+        });
+        panelCloseTimer.start();
     }
 
     //Function: Add Input Block
@@ -109,7 +129,8 @@ public class InputPanel extends JPanel {
             function.toggleHidden();
             colorBtn.setBackground(function.isHidden() ? new Color(0, 0,
                     0, 0) : function.getColor());
-            GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
+            GraphProgram.getGraph().updateGridFunctions(functions.toArray(new
+                    FunctionSet[0]));
             GraphProgram.repaintGraph();
         });
 
@@ -137,7 +158,8 @@ public class InputPanel extends JPanel {
             this.remove(inputBlock);
             this.revalidate();
 
-            GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
+            GraphProgram.getGraph().updateGridFunctions(functions.toArray(new
+                    FunctionSet[0]));
             //Shifts the indexes stored by the input blocks below up
             for (int i = index; i < inputBlocks.size(); i++)
                 inputBlocks.get(i).setId(i);
@@ -174,7 +196,8 @@ public class InputPanel extends JPanel {
                 inputBlock.setInvalidInput(true);
         }
         functions.get(index).setFunction(function);
-        GraphProgram.updateFunctions(functions.toArray(new FunctionSet[0]));
+        GraphProgram.getGraph().updateGridFunctions(functions.toArray(new
+                FunctionSet[0]));
         GraphProgram.repaintGraph();
     }
 
@@ -221,6 +244,7 @@ public class InputPanel extends JPanel {
             height) {
 
         super.setBounds((int)posX, (int)posY, (int)width + 50, (int)height);
+        this.posX = posX;
         this.width = width;
         this.height = height;
 
@@ -272,6 +296,6 @@ public class InputPanel extends JPanel {
         g.setFont(new Font("Arial", Font.BOLD, 50));
         g.drawString("Graph Plane", 20, 55 - scrollPos);
         g.setFont(new Font("Arial", Font.BOLD, 25));
-        g.drawString("Early Dev Edition V0.2", 25, 90 - scrollPos);
+        g.drawString("Graphing Calculator V1.0", 25, 90 - scrollPos);
     }
 }
